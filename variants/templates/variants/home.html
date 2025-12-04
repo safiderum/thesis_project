@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Varyant Skorlayıcı</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        .result-box { background-color: #f0f8ff; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #b0c4de; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        button { background-color: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+    <h1>VarAI Variant Scorer</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Skorları Getir</button>
+    </form>
+
+    {% if results %}
+    <div class="result-box">
+        <h2>Sonuçlar</h2>
+        <p><strong>Varyant:</strong> {{ results.chrom }}:{{ results.pos }}</p>
+        <p><strong>REVEL Skoru:</strong> {{ results.revel_score }}</p>
+        <p><strong>CADD (Phred):</strong> {{ results.cadd_phred }}</p>
+        <hr>
+        <p style="color: red;">Not: {{ results.message }}</p>
+    </div>
+    {% endif %}
+
+</body>
+</html>
