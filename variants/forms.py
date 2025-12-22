@@ -1,13 +1,11 @@
+# variants/forms.py
 from django import forms
 
 class VariantSearchForm(forms.Form):
+    # Kromozom listesini 1'den 22'ye + X, Y, M olarak otomatik üretelim
     CHROMOSOME_CHOICES = [
-        ('chr1', 'Chromosome 1'),
-        ('chr2', 'Chromosome 2'),
-        ('chr3', 'Chromosome 3'),
-        ('chrX', 'Chromosome X'),
-        ('chrY', 'Chromosome Y'),
-    ]
+        (f'chr{i}', f'Chromosome {i}') for i in range(1, 23)
+    ] + [('chrX', 'Chromosome X'), ('chrY', 'Chromosome Y'), ('chrM', 'Mitochondrial')]
 
     chromosome = forms.ChoiceField(choices=CHROMOSOME_CHOICES, label="Chromosome")
     position = forms.IntegerField(min_value=1, label="Position")

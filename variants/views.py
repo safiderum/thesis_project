@@ -1,23 +1,62 @@
 from django.shortcuts import render
-from .forms import VariantSearchForm
+import requests
+from .forms import VariantSearchForm  
 
 def search_variant(request):
-    results = None  # Başlangıçta sonuç yok
-
-    if request.method == 'POST':
+    context = {}
+    
+    # 1. Formu Yönetme (GET veya POST isteği)
+    if request.method == "POST":
         form = VariantSearchForm(request.POST)
+        
         if form.is_valid():
-            # temporary mock data 
-            cd = form.cleaned_data 
+            # Verileri formdan güvenli bir şekilde alıyoruz
+            # Not: cleaned_data içindeki anahtarlar forms.py'daki değişken isimleriyle aynı olmalı
+            chromosome = form.cleaned_data.get("chromosome", "")
+            position = form.cleaned_data.get("position", "")
+            ref = form.cleaned_data.get("ref", "")
+            alt = form.cleaned_data.get("alt", "")
+
+            # --- API Mantığı Başlangıcı ---
             
-            results = {
-                'chrom': cd['chromosome'],
-                'pos': cd['position'],
-                'revel_score': 0.85,   # mock scrore
-                'cadd_phred': 24.5,    # mock score
-                'message': 'Genebe bağlantısı henüz yapılmadı, bu test verisidir.'
+            # Kromozom temizliği (chr17 -> 17)
+            # Eğer chromosome bir sayı değil string geliyorsa str() içine alın
+            chrom_clean = str(chromosome).replace("chr", "").replace("Chr", "").strip()
+
+            url = "https://api.genebe.net/cloud/api-public/v1/variant"
+            
+            params = {
+                "chr": chrom_clean,
+                "pos": position,
+                "ref": ref,
+                "alt": alt,
+                "genome": "hg38"
             }
-    else: # empty page at first
+
+            print(f"--- API'ye Soruluyor: {url} | Parametreler: {params} ---")
+
+            try:
+                response = requests.get(url, params=params)
+
+                if response.status_code == 200:
+                    data = response.json()
+                    context["result"] = data
+                elif response.status_code == 404:
+                    context["error"] = "Varyant bulunamadı (404). Koordinatları kontrol edin (hg38)."
+                else:
+                    context["error"] = f"API Hatası: {response.status_code}"
+
+            except Exception as e:
+                print(f"Bağlantı Hatası: {e}")
+                context["error"] = "API bağlantı hatası."
+            
+            # --- API Mantığı Sonu ---
+            
+    else:
+        # Sayfa ilk açıldığında boş form göster
         form = VariantSearchForm()
 
-    return render(request, 'variants/home.html', {'form': form, 'results': results})
+    # Formu context'e ekliyoruz ki HTML'de {{ form }} çalışsın
+    context["form"] = form
+
+    return render(request, "variants/home.html", context)
