@@ -5,53 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VarAI Variant Scorer</title>
     <style>
-        body { font-family: sans-serif; margin: 40px; }
-        .result-box {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f0f8ff;
-            border: 1px solid #007bff;
-            border-radius: 5px;
-        }
-        .error-box {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #ffe6e6;
-            border: 1px solid #ff0000;
-            color: red;
-            border-radius: 5px;
-        }
-        pre { white-space: pre-wrap; word-wrap: break-word; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; padding: 40px; }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 30px; }
+        
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        .form-box { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        button { width: 100%; padding: 12px; background-color: #0d6efd; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        button:hover { background-color: #0b5ed7; }
+        
+        .result-container { margin-top: 30px; }
+        
+        /* Kart Tasarımı */
+        .info-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; border-left: 5px solid #0d6efd; }
+        .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; }
+        .info-row:last-child { border-bottom: none; }
+        .label { font-weight: bold; color: #555; }
+        
+        /* Tablo Tasarımı */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        th { background-color: #2c3e50; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        tr:last-child td { border-bottom: none; }
+        
+        .badge { padding: 5px 10px; border-radius: 12px; font-size: 0.85em; font-weight: bold; color: white;}
+        .bg-red { background-color: #dc3545; }
+        .bg-green { background-color: #198754; }
+        .bg-gray { background-color: #6c757d; }
+        
+        .error-box { background-color: #f8d7da; color: #842029; padding: 15px; border-radius: 5px; border: 1px solid #f5c2c7; margin-top: 20px;}
     </style>
 </head>
 <body>
 
+<div class="container">
     <h1>VarAI Variant Scorer</h1>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        
-        <button type="submit" style="background-color: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
-            Skorları Getir
-        </button>
-    </form>
+    <div class="form-box">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Varyantı Analiz Et</button>
+        </form>
+    </div>
 
     {% if error %}
         <div class="error-box">
-            <h3>Hata Oluştu:</h3>
-            <p>{{ error }}</p>
+            <strong>Hata:</strong> {{ error }}
         </div>
     {% endif %}
 
-    {% if result %}
-        <div class="result-box">
-            <h2>Sonuçlar:</h2>
-            <p><strong>API'den gelen ham veri:</strong></p>
-            <pre>{{ result }}</pre>
+    {% if variant_info %}
+    <div class="result-container">
+        
+        <div class="info-card">
+            <h3 style="margin-top:0;">Genel Bilgiler</h3>
             
+            <div class="info-row">
+                <span class="label">Gen Sembolü:</span>
+                <span>{{ variant_info.gene_symbol }}</span>
             </div>
+            <div class="info-row">
+                <span class="label">HGVS (DNA):</span>
+                <span>{{ variant_info.hgvs_c }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">HGVS (Protein):</span>
+                <span>{{ variant_info.hgvs_p }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Etki (Effect):</span>
+                <span>{{ variant_info.effect }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">Transkript:</span>
+                <span>{{ variant_info.transcript }}</span>
+            </div>
+            <div class="info-row">
+                <span class="label">ACMG Sınıflandırması:</span>
+                <span>
+                    {% if "Pathogenic" in variant_info.acmg_class %}
+                        <span class="badge bg-red">{{ variant_info.acmg_class }}</span>
+                    {% elif "Benign" in variant_info.acmg_class %}
+                        <span class="badge bg-green">{{ variant_info.acmg_class }}</span>
+                    {% else %}
+                        <span class="badge bg-gray">{{ variant_info.acmg_class }}</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <h3>In Silico Tahmin Sonuçları</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Araç (Tool)</th>
+                    <th>Skor</th>
+                    <th>Tahmin (Prediction)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tool, data in predictions.items %}
+                <tr>
+                    <td><strong>{{ tool }}</strong></td>
+                    <td>{{ data.score }}</td>
+                    <td>
+                        {% if "Pathogenic" in data.pred or "Damaging" in data.pred %}
+                            <span style="color: #dc3545; font-weight: bold;">{{ data.pred }}</span>
+                        {% elif "Benign" in data.pred or "Tolerated" in data.pred %}
+                            <span style="color: #198754; font-weight: bold;">{{ data.pred }}</span>
+                        {% else %}
+                            {{ data.pred }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
     {% endif %}
+</div>
 
 </body>
 </html>
