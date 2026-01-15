@@ -81,19 +81,19 @@
                 <strong>Try examples:</strong>
                 
                 <button type="button" class="example-btn" onclick="loadExample('7', '140753336', 'A', 'T')">
-                    🧬 BRAF (Missense)
+                    BRAF (Missense)
                 </button>
 
                 <button type="button" class="example-btn" onclick="loadExample('13', '32326151', 'G', 'A')">
-                    🧬 BRCA2 (Splice)
+                    BRCA2 (Splice)
                 </button>   
 
                 <button type="button" class="example-btn" onclick="loadExample('M', '3243', 'A', 'G')">
-                    ⚡ MT-TL1 (Mitochondrial)
+                    MT-TL1 (Mitochondrial)
                 </button>
 
                 <button type="button" class="example-btn" onclick="loadExample('11', '5227098', 'T', 'G')">
-                    🩸 HBB (Non-Coding)
+                    HBB (Non-Coding)
                 </button>
             </div>
 
@@ -143,16 +143,32 @@
             </thead>
             <tbody>
                 {% for tool, data in predictions.items %}
-                <tr>
-                    <td><strong>{{ tool }}</strong></td>
-                    <td>{{ data.score }}</td>
+                <tr style="
+                    {% if forloop.counter == 1 %} background-color: rgba(13, 110, 253, 0.15); border-left: 5px solid #0d6efd;
+                    {% elif forloop.counter == 2 %} background-color: rgba(13, 110, 253, 0.10); border-left: 5px solid rgba(13, 110, 253, 0.7);
+                    {% elif forloop.counter == 3 %} background-color: rgba(13, 110, 253, 0.07); border-left: 5px solid rgba(13, 110, 253, 0.4);
+                    {% elif forloop.counter == 4 %} background-color: rgba(13, 110, 253, 0.04); border-left: 5px solid rgba(13, 110, 253, 0.2);
+                    {% elif forloop.counter == 5 %} background-color: rgba(13, 110, 253, 0.02);
+                    {% endif %}
+                ">
+                    <td style="padding: 12px 15px;">
+                        <span style="font-weight: {% if forloop.first %}700{% else %}500{% endif %}; color: #2c3e50;">
+                            {{ tool }}
+                        </span>
+                        {% if forloop.first %}
+                            <span style="display: block; font-size: 0.65rem; color: #0d6efd; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">
+                                Highest Priority
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td style="color: #495057;">{{ data.score }}</td>
                     <td>
                         {% if "Pathogenic" in data.pred or "Damaging" in data.pred %}
-                            <span style="color: #dc3545; font-weight: bold;">{{ data.pred }}</span>
+                            <span style="color: #dc3545; font-weight: 600;">{{ data.pred }}</span>
                         {% elif "Benign" in data.pred or "Tolerated" in data.pred %}
-                            <span style="color: #198754; font-weight: bold;">{{ data.pred }}</span>
+                            <span style="color: #198754; font-weight: 600;">{{ data.pred }}</span>
                         {% else %}
-                            {{ data.pred }}
+                            <span style="color: #6c757d;">{{ data.pred }}</span>
                         {% endif %}
                     </td>
                 </tr>
